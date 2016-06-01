@@ -26,6 +26,39 @@ type SetTeamCommand struct {
 		Teams         []flaghelpers.GitHubTeamFlag `long:"team"          description:"GitHub team whose members will have access." value-name:"ORG/TEAM"`
 		Users         []string                     `long:"user"          description:"GitHub user to permit access." value-name:"LOGIN"`
 	} `group:"GitHub Authentication" namespace:"github-auth"`
+
+	CFAuth CFAuth `group:"CF Authentication" namespace:"cf-auth"`
+}
+
+type CFAuth struct {
+	ClientID     string   `long:"client-id"     description:"Application client ID for enabling UAA OAuth."`
+	ClientSecret string   `long:"client-secret" description:"Application client secret for enabling UAA OAuth."`
+	Spaces       []string `long:"space"         description:"Space GUID for a CF space whose developers will have access."`
+	AuthURL      string   `long:"auth-url"      description:"UAA AuthURL endpoint."`
+	TokenURL     string   `long:"token-url"     description:"UAA TokenURL endpoint."`
+	APIURL       string   `long:"api-url"       description:"CF API endpoint."`
+}
+
+func (auth *CFAuth) IsConfigured() bool {
+	return auth.ClientID != "" ||
+		auth.ClientSecret != "" ||
+		len(auth.Spaces) > 0 ||
+		auth.AuthURL != "" ||
+		auth.TokenURL != "" ||
+		auth.APIURL != ""
+}
+
+func (auth *CFAuth) Validate() error {
+	if auth.ClientID == "" || auth.ClientSecret == "" {
+		return errors.New("Both client-id and client-secret are required for cf-auth.")
+	}
+	if len(auth.Spaces) == 0 {
+		return errors.New("space is required for cf-auth.")
+	}
+	if auth.AuthURL == "" || auth.TokenURL == "" || auth.APIURL == "" {
+		return errors.New("auth-url, token-url and api-url are required for cf-auth.")
+	}
+	return nil
 }
 
 func (command *SetTeamCommand) Execute([]string) error {
@@ -107,6 +140,13 @@ func (command *SetTeamCommand) ValidateFlags() (bool, bool, error) {
 			len(command.GitHubAuth.Teams) == 0 &&
 			len(command.GitHubAuth.Users) == 0 {
 			return false, false, errors.New("At least one of the following is required for github-auth: organizations, teams, users")
+		}
+	}
+
+	if command.CFAuth.IsConfigured() {
+		err := command.CFAuth.Validate()
+		if err != nil {
+			return false, false, err
 		}
 	}
 

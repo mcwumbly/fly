@@ -115,6 +115,107 @@ var _ = Describe("Fly CLI", func() {
 				})
 			})
 		})
+
+		Describe("cf auth", func() {
+			Context("ClientID omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{"--cf-auth-client-secret", "brock123"}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("Both client-id and client-secret are required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+
+			Context("ClientSecret omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{"--cf-auth-client-id", "Brock Samson"}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("Both client-id and client-secret are required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+
+			Context("Space omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{
+						"--cf-auth-client-id", "Brock Samson",
+						"--cf-auth-client-secret", "brock123",
+					}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("space is required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+
+			Context("TokenURL omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{
+						"--cf-auth-client-id", "Brock Samson",
+						"--cf-auth-client-secret", "brock123",
+						"--cf-auth-space", "myspace",
+						"--cf-auth-auth-url", "http://auth.example.url",
+						"--cf-auth-api-url", "http://api.example.url",
+					}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("auth-url, token-url and api-url are required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+
+			Context("AuthUrl omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{
+						"--cf-auth-client-id", "Brock Samson",
+						"--cf-auth-client-secret", "brock123",
+						"--cf-auth-space", "myspace",
+						"--cf-auth-token-url", "http://token.example.url",
+						"--cf-auth-api-url", "http://api.example.url",
+					}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("auth-url, token-url and api-url are required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+
+			Context("ApiURL omitted", func() {
+				BeforeEach(func() {
+					cmdParams = []string{
+						"--cf-auth-client-id", "Brock Samson",
+						"--cf-auth-client-secret", "brock123",
+						"--cf-auth-space", "myspace",
+						"--cf-auth-auth-url", "http://auth.example.url",
+						"--cf-auth-token-url", "http://token.example.url",
+					}
+				})
+
+				It("returns an error", func() {
+					sess, err := gexec.Start(flyCmd, nil, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(sess.Err).Should(gbytes.Say("auth-url, token-url and api-url are required for cf-auth."))
+					Eventually(sess).Should(gexec.Exit(1))
+				})
+			})
+		})
 	})
 
 	Describe("Display", func() {
@@ -123,13 +224,14 @@ var _ = Describe("Fly CLI", func() {
 				cmdParams = []string{"--basic-auth-username", "brock samson", "--basic-auth-password", "brock123"}
 			})
 
-			It("says 'enabled' to setting basic auth and 'disabled' to github auth", func() {
+			It("says 'enabled' to setting basic auth and 'disabled' to the rest auths", func() {
 				sess, err := gexec.Start(flyCmd, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				Eventually(sess.Out).Should(gbytes.Say("Team Name: venture"))
 				Eventually(sess.Out).Should(gbytes.Say("Basic Auth: enabled"))
 				Eventually(sess.Out).Should(gbytes.Say("GitHub Auth: disabled"))
+				Eventually(sess.Out).Should(gbytes.Say("CF Auth: disabled"))
 
 				Eventually(sess).Should(gexec.Exit(1))
 			})
