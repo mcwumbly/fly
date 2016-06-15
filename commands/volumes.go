@@ -37,13 +37,20 @@ func (command *VolumesCommand) Execute([]string) error {
 			{Contents: "worker", Color: color.New(color.Bold)},
 			{Contents: "type", Color: color.New(color.Bold)},
 			{Contents: "identifier", Color: color.New(color.Bold)},
-			{Contents: "size", Color: color.New(color.Bold)},
+			{Contents: "size (MB)", Color: color.New(color.Bold)},
 		},
 	}
 
 	sort.Sort(volumesByWorkerAndHandle(volumes))
 
 	for _, c := range volumes {
+		var size string
+		if c.SizeInKB == 0 {
+			size = "unknown"
+		} else {
+			size = fmt.Sprintf("%.1f", float64(c.SizeInKB)/float64(1000))
+		}
+
 		row := ui.TableRow{
 			{Contents: c.ID},
 			{Contents: formatTTL(c.TTLInSeconds)},
@@ -51,7 +58,7 @@ func (command *VolumesCommand) Execute([]string) error {
 			{Contents: c.WorkerName},
 			{Contents: c.Type},
 			{Contents: c.Identifier},
-			{Contents: fmt.Sprintf("%.1fM", float64(c.Size)/float64(1024*1024))},
+			{Contents: size},
 		}
 
 		table.Data = append(table.Data, row)
