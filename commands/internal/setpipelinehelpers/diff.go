@@ -152,9 +152,11 @@ func diffIndices(oldIndex Index, newIndex Index) Diffs {
 
 func renderDiff(to io.Writer, a, b string) {
 	diffs := difflib.Diff(strings.Split(a, "\n"), strings.Split(b, "\n"))
+	fmt.Printf("found %d diffs\n", len(diffs))
 
 	for _, diff := range diffs {
 		text := diff.Payload
+		fmt.Printf("diff: %s\n", text)
 
 		switch diff.Delta {
 		case difflib.RightOnly:
